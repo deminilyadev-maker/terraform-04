@@ -1,6 +1,14 @@
-module "vpc" {
-  source = "./vpc"
-  env_name = "develop"
-  zone     = "ru-central1-a"
-  cidr     = "10.0.1.0/24"
+terraform {
+  required_providers {
+    yandex = {
+      source  = "yandex-cloud/yandex"
+      version = "~> 0.225"
+    }
+  }
+}
+
+provider "yandex" {
+  token     = var.token
+  cloud_id  = var.cloud_id
+  folder_id = var.folder_id
 }
