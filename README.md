@@ -58,7 +58,7 @@ stage-web-stage-0
 
 ### Скриншот
 
-![Список виртуальных машин](screenshots/task1_vm_list.png)
+![Список виртуальных машин](screenshots/Task1_Yandex_VMs.png)
 
 ---
 
@@ -163,7 +163,7 @@ develop-ru-central1-a
 
 ### Скриншот
 
-![Список подсетей Yandex Cloud](screenshots/task2_vpc_subnet_list.png)
+![Список подсетей Yandex Cloud](screenshots/task3_import_subnet_back.png)
 
 ---
 
@@ -285,7 +285,7 @@ module.vpc.yandex_vpc_subnet.root_subnet
 
 ### Скриншот
 
-![Terraform state после импорта](screenshots/task3_state_list.png)
+![Terraform state после импорта](screenshots/Task3_list_state_resources.png)
 
 ---
 
@@ -319,7 +319,7 @@ allow_stopping_for_update = true
 
 ### Скриншот
 
-![Финальный terraform plan](screenshots/task3_final_plan.png)
+![Финальный terraform plan](screenshots/Task3_final_terraform_plan.png)
 
 ---
 
