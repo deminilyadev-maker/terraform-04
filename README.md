@@ -64,14 +64,6 @@ sudo nginx -t
 
 ![Проверка конфигурации nginx](screenshots/Task1_Nginx_check.png)
 
-Также через `terraform console` была проверена информация, возвращаемая модулем.
-
-### Скриншот
-
-![Результат работы модуля в Terraform Console](screenshots/Task1_Module_result.png)
-
----
-
 # Задание 2
 
 ## Шаг 1. Создание локального модуля VPC
