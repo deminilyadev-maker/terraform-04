@@ -17,83 +17,58 @@
 
 # Задание 1
 
-## Шаг 1. Создание двух виртуальных машин с помощью remote-модуля
+## Шаг 1. Создание двух ВМ с помощью remote-модуля
 
-На основе кода из демонстрации был создан Terraform-проект с использованием двух вызовов `remote`-модуля.
+В соответствии с заданием был использован готовый код из демонстрации для создания двух виртуальных машин с помощью двух вызовов `remote`-модуля.
 
-Были созданы две виртуальные машины, относящиеся к разным проектам:
+Виртуальные машины относятся к разным проектам:
 
 - `marketing`;
 - `analytics`.
 
-Для обозначения принадлежности виртуальных машин использованы labels.
+Для обозначения принадлежности используются `labels`.
 
-В конфигурации также используется `cloud-init`, которому передаётся SSH-ключ и шаблон `cloud-init.yml`.
+В `cloud-init.yml` передаётся SSH-ключ, а значение SSH-ключа передаётся в функцию `templatefile`.
 
 ---
 
 ## Шаг 2. Установка nginx
 
-В файл `cloud-init.yml` была добавлена установка веб-сервера nginx.
+В файл `cloud-init.yml` была добавлена установка nginx.
 
-После создания виртуальных машин nginx устанавливается автоматически при выполнении cloud-init.
+Таким образом, при создании виртуальных машин установка веб-сервера выполняется автоматически через `cloud-init`.
 
 ---
 
-## Шаг 3. Проверка созданных виртуальных машин
+## Шаг 3. Проверка ВМ и модуля
 
-После выполнения Terraform были проверены созданные ресурсы с помощью Yandex Cloud CLI:
+Для проверки созданных ресурсов использовалась команда:
 
 ```bash
 yc compute instance list
 ```
 
-В результате были получены три работающие виртуальные машины проекта:
+В результате были получены созданные виртуальные машины Yandex Cloud.
 
-```text
-develop-webs-1
-develop-webs-0
-stage-web-stage-0
+### Скриншот
+
+![Список виртуальных машин Yandex Cloud](screenshots/Task1_Yandex_VMs.png)
+
+Для проверки работы nginx на виртуальной машине была выполнена команда:
+
+```bash
+sudo nginx -t
 ```
 
 ### Скриншот
 
-![Список виртуальных машин](screenshots/Task1_Yandex_VMs.png)
+![Проверка конфигурации nginx](screenshots/Task1_Nginx_check.png)
 
----
+Также через `terraform console` была проверена информация, возвращаемая модулем.
 
-## Шаг 4. Проверка параметров виртуальных машин
+### Скриншот
 
-Параметры виртуальных машин были дополнительно проверены командой:
-
-```bash
-yc compute instance get --name develop-webs-1
-```
-
-и:
-
-```bash
-yc compute instance get --name develop-webs-0
-```
-
-Проверены:
-
-- ID виртуальных машин;
-- имя;
-- зона;
-- статус;
-- CPU и RAM;
-- сеть;
-- внутренний и внешний IP;
-- labels.
-
-Пример labels:
-
-```yaml
-labels:
-  owner: i.ivanov
-  project: marketing
-```
+![Результат работы модуля в Terraform Console](screenshots/Task1_Module_result.png)
 
 ---
 
@@ -101,49 +76,80 @@ labels:
 
 ## Шаг 1. Создание локального модуля VPC
 
-Был создан локальный Terraform-модуль `vpc`.
-
-Модуль создаёт два ресурса:
+Был создан локальный модуль `vpc`, который создаёт два ресурса:
 
 - одну сеть `yandex_vpc_network`;
 - одну подсеть `yandex_vpc_subnet`.
 
-Параметры сети и подсети передаются в модуль через переменные.
-
-В частности, задаются:
+Модуль принимает следующие параметры:
 
 - имя сети;
-- зона;
+- окружение;
+- зону;
 - `v4_cidr_blocks`.
 
-Пример вызова модуля:
+Пример вызова:
 
 ```hcl
 module "vpc_dev" {
-  source     = "./vpc"
-  env_name   = "develop"
-  zone       = "ru-central1-a"
-  cidr       = "10.0.1.0/24"
+  source   = "./vpc"
+  env_name = "develop"
+  zone     = "ru-central1-a"
+  cidr     = "10.0.1.0/24"
 }
 ```
 
 ---
 
-## Шаг 2. Проверка созданных ресурсов VPC
+## Шаг 2. Передача переменных в модуль
 
-Для просмотра сетей была выполнена команда:
+Вызов модуля выполняется с передачей имени сети, зоны и диапазона адресов:
 
-```bash
-yc vpc network list
+```hcl
+source   = "./vpc"
+env_name = "develop"
+zone     = "ru-central1-a"
+cidr     = "10.0.1.0/24"
 ```
 
-В результате была найдена сеть:
+Таким образом, модуль является переиспользуемым и позволяет создавать VPC с различными параметрами.
+
+---
+
+## Шаг 3. Возврат информации через output
+
+В модуле были добавлены `output`, возвращающие информацию о созданных ресурсах:
+
+```hcl
+output "network_id" {
+  value = yandex_vpc_network.root_network.id
+}
+
+output "subnet_id" {
+  value = yandex_vpc_subnet.root_subnet.id
+}
+```
+
+Полученные значения используются в корневом модуле Terraform.
+
+### Скриншот
+
+![Информация о VPC-модуле](screenshots/Task1_Module_result.png)
+
+---
+
+## Шаг 4. Замена ресурсов VPC локальным модулем
+
+Ресурсы:
 
 ```text
-develop
+yandex_vpc_network
+yandex_vpc_subnet
 ```
 
-Для просмотра подсетей была выполнена команда:
+были заменены вызовом созданного локального модуля `vpc`.
+
+Для проверки существующих подсетей использовалась команда:
 
 ```bash
 yc vpc subnet list
@@ -167,27 +173,11 @@ develop-ru-central1-a
 
 ---
 
-## Шаг 3. Использование созданного VPC-модуля
+## Шаг 5. Генерация документации
 
-Ресурсы `yandex_vpc_network` и `yandex_vpc_subnet` были заменены на ресурсы, создаваемые локальным модулем.
+Для локального модуля была сгенерирована документация с помощью `terraform-docs`.
 
-Необходимые параметры сети передаются в модуль через переменные.
-
-Информация о созданной сети и подсети также возвращается через `output`.
-
----
-
-## Шаг 4. Генерация документации
-
-Для локального модуля VPC была подготовлена документация с помощью `terraform-docs`.
-
-В результате структура проекта содержит отдельный каталог:
-
-```text
-vpc/
-```
-
-с конфигурацией локального модуля.
+Документация содержит описание входных переменных и выходных значений модуля.
 
 ---
 
@@ -201,79 +191,7 @@ vpc/
 terraform state list
 ```
 
-В состоянии находились ресурсы VPC и виртуальных машин, в том числе:
-
-```text
-module.example-vm.yandex_compute_instance.vm[0]
-module.test-vm.yandex_compute_instance.vm[0]
-module.test-vm.yandex_compute_instance.vm[1]
-module.vpc.yandex_vpc_network.root_network
-module.vpc.yandex_vpc_subnet.root_subnet
-```
-
----
-
-## Шаг 2. Удаление модулей VPC и VM из state
-
-По условию задания модули `vpc` и `vm` были полностью удалены из Terraform state без удаления самих ресурсов в Yandex Cloud.
-
-После удаления ресурсов из state они продолжили существовать в облаке.
-
----
-
-## Шаг 3. Проверка ресурсов в Yandex Cloud
-
-Для проверки существующих виртуальных машин была выполнена команда:
-
-```bash
-yc compute instance list
-```
-
-В результате были найдены:
-
-```text
-develop-webs-1
-develop-webs-0
-stage-web-stage-0
-```
-
-Также была проверена существующая подсеть:
-
-```bash
-yc vpc subnet list
-```
-
----
-
-## Шаг 4. Импорт ресурсов обратно в Terraform state
-
-После удаления ресурсов из state они были импортированы обратно.
-
-Пример импорта подсети:
-
-```bash
-terraform import 'module.vpc.yandex_vpc_subnet.root_subnet' <SUBNET_ID>
-```
-
-Для виртуальных машин были выполнены импорты:
-
-```bash
-terraform import 'module.test-vm.yandex_compute_instance.vm[0]' fhmi5174eh3h07ppcin3
-```
-
-```bash
-terraform import 'module.test-vm.yandex_compute_instance.vm[1]' fhm95t3skh88bao0tvag
-```
-
-Также был импортирован ресурс виртуальной машины модуля `example-vm`.
-
-После импорта был проверен Terraform state:
-
-```bash
-terraform state list
-```
-
-В state снова присутствуют ресурсы модулей:
+В state находились ресурсы виртуальных машин и VPC:
 
 ```text
 module.example-vm.yandex_compute_instance.vm[0]
@@ -285,37 +203,97 @@ module.vpc.yandex_vpc_subnet.root_subnet
 
 ### Скриншот
 
-![Terraform state после импорта](screenshots/Task3_list_state_resources.png)
+![Ресурсы Terraform state](screenshots/Task3_list_state_resources.png)
 
 ---
 
-## Шаг 5. Проверка terraform plan
+## Шаг 2. Удаление модуля VPC из state
 
-После завершения импорта выполнена проверка:
+Модуль VPC был полностью удалён из Terraform state без удаления соответствующих ресурсов из Yandex Cloud.
+
+Для удаления использовались команды:
+
+```bash
+terraform state rm 'module.vpc.yandex_vpc_network.root_network'
+```
+
+```bash
+terraform state rm 'module.vpc.yandex_vpc_subnet.root_subnet'
+```
+
+### Скриншот
+
+![Удаление VPC из Terraform state](screenshots/Task3_vpc_removed.png)
+
+---
+
+## Шаг 3. Удаление модулей VM из state
+
+Модули виртуальных машин также были удалены из Terraform state без удаления самих виртуальных машин из Yandex Cloud.
+
+Для удаления использовались команды:
+
+```bash
+terraform state rm 'module.example-vm.yandex_compute_instance.vm[0]'
+```
+
+```bash
+terraform state rm 'module.test-vm.yandex_compute_instance.vm[0]'
+```
+
+```bash
+terraform state rm 'module.test-vm.yandex_compute_instance.vm[1]'
+```
+
+### Скриншот
+
+![Удаление ВМ из Terraform state](screenshots/Task3_vm_removed.png)
+
+---
+
+## Шаг 4. Импорт ресурсов обратно и проверка plan
+
+После удаления ресурсов из state было проверено, что сами ресурсы продолжают существовать в Yandex Cloud.
+
+Затем ресурсы были импортированы обратно в Terraform state.
+
+Пример импорта подсети:
+
+```bash
+terraform import 'module.vpc.yandex_vpc_subnet.root_subnet' e9b7ordt2bv0p4iumsm6
+```
+
+Пример импорта виртуальной машины:
+
+```bash
+terraform import 'module.test-vm.yandex_compute_instance.vm[0]' fhmi5174eh3h07ppcin3
+```
+
+Вторая виртуальная машина была импортирована с её фактическим ID:
+
+```bash
+terraform import 'module.test-vm.yandex_compute_instance.vm[1]' fhm95t3skh88bao0tvag
+```
+
+После импорта был проверен Terraform state:
+
+```bash
+terraform state list
+```
+
+Затем выполнена финальная проверка:
 
 ```bash
 terraform plan
 ```
 
-В результате Terraform не планирует создание или удаление ресурсов:
+Итоговый результат:
 
 ```text
 Plan: 0 to add, 3 to change, 0 to destroy.
 ```
 
-Все три изменения являются обновлением параметра:
-
-```hcl
-allow_stopping_for_update = true
-```
-
-Существенных изменений инфраструктуры нет:
-
-- новые ВМ не создаются;
-- существующие ВМ не удаляются;
-- сеть не пересоздаётся;
-- подсеть не пересоздаётся;
-- изменения конфигурации виртуальных машин отсутствуют, кроме `allow_stopping_for_update`.
+Таким образом, Terraform не планирует создание или удаление ресурсов. Значимых изменений инфраструктуры нет.
 
 ### Скриншот
 
@@ -325,13 +303,16 @@ allow_stopping_for_update = true
 
 # Итог
 
-В рамках домашнего задания:
+В рамках домашнего задания были выполнены все три задания:
 
-- созданы и проверены виртуальные машины в Yandex Cloud;
-- использованы Terraform-модули;
+- созданы две ВМ с помощью `remote`-модуля;
+- настроен `cloud-init` и установка nginx;
+- выполнена проверка ВМ и nginx;
 - создан локальный модуль VPC;
-- создана сеть и подсеть через локальный модуль;
-- ресурсы были удалены из Terraform state без удаления из облака;
-- все необходимые ресурсы импортированы обратно;
-- выполнена проверка `terraform plan`;
-- после импорта отсутствуют операции `add` и `destroy`, то есть значимых изменений инфраструктуры нет.
+- сеть и подсеть вынесены в локальный модуль;
+- настроены `output` модуля;
+- сгенерирована документация `terraform-docs`;
+- ресурсы VPC и VM удалены из Terraform state без удаления из Yandex Cloud;
+- ресурсы импортированы обратно;
+- выполнен `terraform plan`;
+- итоговый plan не содержит операций `add` и `destroy`, значимых изменений инфраструктуры нет.
